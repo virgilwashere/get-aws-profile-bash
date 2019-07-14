@@ -13,7 +13,7 @@ declare script_name script_title script_version script_author script_email
 declare script_url script_copyright script_license
 script_name="${0##*/}"
 script_title="get-aws-profile-bash"
-script_version="0.0.3"
+script_version="0.0.4"
 script_author="Aaron Roydhouse"
 script_email="aaron@roydhouse.com"
 script_url="https://github.com/whereisaaron/get-aws-profile-bash/"
@@ -68,9 +68,9 @@ echo_stderr ()
 # See https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html
 #
 
-declare AWS_PROFILE CREDENTIALS
+declare AWS_PROFILE CREDENTIALS aws_session_expiration
 declare aws_access_key_id aws_secret_access_key aws_session_token
-declare -i show_key show_secret show_session_token hide_profile
+declare -i show_key show_secret show_session_token hide_profile show_expiration
 
 CREDENTIALS="${AWS_SHARED_CREDENTIALS_FILE:-"$HOME/.aws/credentials"}"
 AWS_PROFILE=${AWS_PROFILE:-${AWS_DEFAULT_PROFILE:-default}}
@@ -78,6 +78,7 @@ show_key=0
 show_secret=0
 show_session_token=0
 hide_profile=0
+show_expiration=0
 
 #
 # Parse options
@@ -96,7 +97,7 @@ Written by ${script_author}, see <${script_url}>."
 
 display_usage ()
 {
-  echo_stderr "Usage: $script_name [--credentials=<path>] [--profile=<name>] [--key|--secret|--session-token]
+  echo_stderr "Usage: $script_name [--credentials=<path>] [--profile=<name>] [OPTIONS]
 
 Options:
   -p, --profile             use profile
@@ -104,6 +105,7 @@ Options:
   -k, --key                 get value of aws_access_key_id
   -s, --secret              get value of aws_secret_access_key
   -t, --session-token       get value of aws_session_token
+  -e, --expiration          get value of aws_session_expiration
   -n, --no                  do not display 'export AWS_PROFILE=<name>'
   -V, --version             display version information
   -h, --help                display this help text
@@ -120,7 +122,8 @@ get just that value, with no line break:
 
 \$ FOO_KEY=\$($script_name --profile myprofile --key)
 \$ FOO_SECRET=\$($script_name -p myprofile -s)
-\$ FOO_SESSION_TOKEN=\$($script_name -t --profile=myprofile)"
+\$ FOO_SESSION_TOKEN=\$($script_name -t --profile=myprofile)
+\$ FOO_EXPIRATION=\$($script_name -p myprofile --expiration)"
 }
 
 for i in "$@"
@@ -158,6 +161,10 @@ case $i in
     show_session_token=1
     shift # past argument with no value
     ;;
+  -e | --expiration)
+    show_expiration=1
+    shift # past argument with no value
+    ;;
   -V | --version)
     display_version
     exit 0
@@ -169,6 +176,7 @@ case $i in
   *)
     # unknown option
     echo_stderr "Unknown option $i"
+    echo_stderr ""
     display_usage
     exit 64
     ;;
@@ -179,8 +187,9 @@ done
 # Check options
 #
 
-if [[ $((show_key + show_secret + show_session_token)) -gt 1 ]]; then
-  echo_stderr "Can only specify one of --key,--secret or --session-token"
+if [[ $((show_key + show_secret + show_session_token + show_expiration)) -gt 1 ]]; then
+  echo_stderr "Can only specify one of --key,--secret, --session-token or --expiration"
+  echo_stderr ""
   display_usage
   exit 64
 fi
@@ -205,24 +214,29 @@ if ! cfg.section."${AWS_PROFILE}" 2> /dev/null; then
 fi
 
 # shellcheck disable=SC2154
-if ! ((show_key + show_secret + show_session_token)); then
+if ! ((show_key + show_secret + show_session_token + show_expiration)); then
   echo_stderr "# Profile '${AWS_PROFILE}'"
   ((hide_profile)) || printf 'export AWS_PROFILE=%s\n' "${AWS_PROFILE}"
-  printf 'export AWS_ACCESS_KEY_ID=%s\n' "${aws_access_key_id}"
-  printf 'export AWS_SECRET_ACCESS_KEY=%s\n' "${aws_secret_access_key}"
-  printf 'export AWS_SESSION_TOKEN=%s\n' "${aws_session_token}"
+  printf 'export AWS_ACCESS_KEY_ID=%s\n' "${aws_access_key_id-}"
+  printf 'export AWS_SECRET_ACCESS_KEY=%s\n' "${aws_secret_access_key-}"
+  printf 'export AWS_SESSION_TOKEN=%s\n' "${aws_session_token-}"
+  if [[ -n "${aws_session_expiration-}" ]]; then
+    printf "export AWS_SESSION_EXPIRATION='%s'\n" "${aws_session_expiration}"
+  fi
 elif ((show_key)); then
-  printf '%s' "${aws_access_key_id}"
+  printf '%s' "${aws_access_key_id-}"
 elif ((show_secret)); then
-  printf '%s' "${aws_secret_access_key}"
+  printf '%s' "${aws_secret_access_key-}"
 elif ((show_session_token)); then
-  printf '%s' "${aws_session_token}"
+  printf '%s' "${aws_session_token-}"
+elif ((show_expiration)); then
+  printf '%s' "${aws_session_expiration-}"
 else
   echo_stderr "Unknown error"
   exit 9
 fi
 
-unset -v CREDENTIALS
+unset -v CREDENTIALS show_expiration aws_session_expiration
 unset -v show_key show_secret show_session_token hide_profile
 unset -v aws_access_key_id aws_secret_access_key aws_session_token
 unset -v script_name script_title script_version script_author script_email

@@ -10,7 +10,7 @@ This is a pure bash script that can parse and extract AWS credentials (access_ke
 
 ```console
 $ get-aws-profile.sh --help
-Usage: get-aws-profile.sh [--credentials=<path>] [--profile=<name>] [--key|--secret|--session-token]
+Usage: get-aws-profile.sh [--credentials=<path>] [--profile=<name>] [OPTIONS]
 
 Options:
   -p, --profile             use profile
@@ -18,6 +18,7 @@ Options:
   -k, --key                 get value of aws_access_key_id
   -s, --secret              get value of aws_secret_access_key
   -t, --session-token       get value of aws_session_token
+  -e, --expiration          get value of aws_session_expiration
   -n, --no                  do not display 'export AWS_PROFILE=<name>'
   -V, --version             display version information
   -h, --help                display this help text
@@ -35,6 +36,7 @@ get just that value, with no line break:
 $ FOO_KEY=$(get-aws-profile.sh --profile myprofile --key)
 $ FOO_SECRET=$(get-aws-profile.sh -p myprofile -s)
 $ FOO_SESSION_TOKEN=$(get-aws-profile.sh -t --profile=myprofile)
+$ FOO_EXPIRATION=$(get-aws-profile.sh -p myprofile --expiration)
 
 ```
 
@@ -49,6 +51,7 @@ export AWS_PROFILE=my-example
 export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
 export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 export AWS_SESSION_TOKEN=IYWKfEIM7SwWerymB0KpQLIKXeE6jBtX1iGKXVqHVEXAMPLETOKEN
+export AWS_SESSION_EXPIRATION='2019-07-04 18:25:12+00:00'
 $ source $(get-aws-profile.sh --profile=my-example)
 ```
 
@@ -125,7 +128,7 @@ The really cool part of this script is the ['ini' file parser written by Andres 
 
 ```console
 $ get-aws-profile.sh --version
-get-aws-profile.sh (get-aws-profile-bash) v0.0.3
+get-aws-profile.sh (get-aws-profile-bash) v0.0.4
 Copyright (c) 2017-2019 Aaron Roydhouse <aaron@roydhouse.com>
 License: The MIT License (MIT)
 This is free software: you are free to change and redistribute it.
