@@ -18,6 +18,8 @@ Options:
   -k, --key                 get value of aws_access_key_id
   -s, --secret              get value of aws_secret_access_key
   -t, --session-token       get value of aws_session_token
+  -n, --no                  do not display 'export AWS_PROFILE=<name>'
+  -V, --version             display version information
   -h, --help                display this help text
 
 Default --credentials is '$AWS_SHARED_CREDENTIALS_FILE' or '~/.aws/credentials'
@@ -25,14 +27,14 @@ Default --profile is '$AWS_DEFAULT_PROFILE' or 'default'
 
 To generate environment variables for profile myprofile:
 
-  $ source $(get-aws-profile.sh --profile=myprofile)
+$ source $(get-aws-profile.sh --profile=myprofile)
 
-You can specify one of --key, --secret, --session-token or --expiration to
+You can specify one of --key, --secret or --session-token to
 get just that value, with no line break:
 
-  $ FOO_KEY=$(get-aws-profile.sh --profile myprofile --key)
-  $ FOO_SECRET=$(get-aws-profile.sh -p myprofile -s)
-  $ FOO_SESSION_TOKEN=$(get-aws-profile.sh -t --profile=myprofile)
+$ FOO_KEY=$(get-aws-profile.sh --profile myprofile --key)
+$ FOO_SECRET=$(get-aws-profile.sh -p myprofile -s)
+$ FOO_SESSION_TOKEN=$(get-aws-profile.sh -t --profile=myprofile)
 
 ```
 
@@ -42,11 +44,30 @@ get just that value, with no line break:
 
 ```console
 $ get-aws-profile.sh --profile=my-example
+# Profile 'my-example'
+export AWS_PROFILE=my-example
 export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
 export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 export AWS_SESSION_TOKEN=IYWKfEIM7SwWerymB0KpQLIKXeE6jBtX1iGKXVqHVEXAMPLETOKEN
 $ source $(get-aws-profile.sh --profile=my-example)
 ```
+
+### Set AWS environment variables at login
+
+Add this to your `.bashrc` or `.profile`.
+
+```bash
+aws-profile()
+{
+  AWS_PROFILE="${1-}"
+  # if AWS_PROFILE is set, append '--profile=$AWS_PROFILE'
+  eval $(get-aws-profile.sh ${AWS_PROFILE:+--profile=${AWS_PROFILE}})
+}
+export AWS_DEFAULT_PROFILE='my-example'
+aws-profile "${AWS_DEFAULT_PROFILE}"
+```
+
+Run `aws-profile` or `aws-profile <new-profile>` to update or replace environment variables as required.
 
 ### Get key and secret for 'my-example' profile
 
@@ -97,3 +118,18 @@ This script helps automate these tasks whilst keeping the credentials out of you
 ## Credits
 
 The really cool part of this script is the ['ini' file parser written by Andres J. Diaz](https://web.archive.org/web/20180826221418/http://theoldschooldevops.com/2008/02/09/bash-ini-parser/).
+
+## License
+
+[MIT](./LICENSE)
+
+```console
+$ get-aws-profile.sh --version
+get-aws-profile.sh (get-aws-profile-bash) v0.0.3
+Copyright (c) 2017-2019 Aaron Roydhouse <aaron@roydhouse.com>
+License: The MIT License (MIT)
+This is free software: you are free to change and redistribute it.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+Written by Aaron Roydhouse, see <https://github.com/whereisaaron/get-aws-profile-bash/>.
+```
